@@ -15,7 +15,7 @@ class board:
             for j in range(self.col):
                 print(j)
                 self.board[i].append(0)
-                self.boardRect[i].append(pygame.Rect((j * 50, i * 50, 45, 45)))
+                self.boardRect[i].append(pygame.Rect((j * 25, i * 25, 20, 20)))
 
                 pygame.draw.rect(self.screen, (0, 0, 255), self.boardRect[i][j])
 
@@ -32,3 +32,5 @@ class board:
                 else:
                     color = (0, 0, 255)
                 pygame.draw.rect(self.screen, color, self.boardRect[i][j])
+
+

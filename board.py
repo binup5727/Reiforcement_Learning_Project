@@ -1,6 +1,7 @@
 import pygame
 
 class board:
+    
     def __init__(self, rows, col, screen):
         self.rows = rows
         self.col = col

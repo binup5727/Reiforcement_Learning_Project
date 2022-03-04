@@ -1,7 +1,6 @@
 import pygame
 
 class board:
-    
     def __init__(self, rows, col, screen):
         self.rows = rows
         self.col = col
@@ -22,4 +21,14 @@ class board:
 
         
                 
-        
+    def draw(self):
+
+        for i in range(self.rows):
+            
+            for j in range(self.col):
+
+                if self.board[i][j] == '*':
+                    color = (0, 0, 0)
+                else:
+                    color = (0, 0, 255)
+                pygame.draw.rect(self.screen, color, self.boardRect[i][j])

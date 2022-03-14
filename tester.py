@@ -4,12 +4,12 @@ from sys import exit
 
 
 pygame.init()
-width, height = 800, 800
+width, height = 500, 500
 screen = pygame.display.set_mode((width,height), pygame.RESIZABLE)
 clock = pygame.time.Clock()
 
 #--- Q learning
-q_board = player(20, 20, screen)
+q_board = player(5, 6, screen)
 
 while True:
     for event in pygame.event.get():
@@ -19,9 +19,13 @@ while True:
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             if q_board.playerRec.collidepoint(mouse_pos):
+                print(q_board.board.board)
+                
+
                 row = int(input('row: '))
                 col = int(input('column: '))
                 q_board.board.board[row][col] = 'p'
+
                 
             for i in range(q_board.board.rows):
                 for j in range(q_board.board.col):

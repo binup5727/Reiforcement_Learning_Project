@@ -15,7 +15,7 @@ class board:
 
         
 
-        #print(win[0])
+        ##print(win[0])
         
 
         
@@ -65,6 +65,20 @@ class board:
         self.board[self.win[0]][self.win[1]] = 1
 
         self.board[self.state[0]][self.state[1]] = 'p'
+
+    def makeQ(self):
+        Q = []
+
+        for i in range(self.rows):
+            Q.append([])
+            for j in range(self.col):
+                Q[i].append([])
+
+                for k in range(4):
+                    Q[i][j].append(0)
+
+        return Q
+
         
         
     #reward for state
@@ -75,18 +89,18 @@ class board:
             return 0
 
     #choose a action ep greedy
-    def choose(self):
+    def choose(self, state):
 
         choice = np.random.random()
         
-        #print(self.actions[np.random.randint(len(self.actions))])
+        ##print(self.actions[np.random.randint(len(self.actions))])
         if choice < 1 - self.epsilon:
-            print((self.Q[self.state[0]][self.state[1]]))
-            if np.sum(self.Q[self.state[0]][self.state[1]]) == 0:
+            #print((self.Q[state[0]][state[1]]))
+            if np.sum(self.Q[state[0]][state[1]]) == 0:
                 action = self.actions[np.random.randint(0, len(self.actions))]
             else:
                 
-                action = self.actions[np.argmax(self.Q[self.state[0]][self.state[1]])]
+                action = self.actions[np.argmax(self.Q[state[0]][state[1]])]
 
 
         else:
@@ -96,10 +110,36 @@ class board:
 
         return action
 
+    def choose_doubleq(self, QA, QB, state):
+
+        choice = np.random.random()
+        Q = (np.array(QA[state[0]][state[1]]) + np.array(QB[state[0]][state[1]])) / 2
+        ##print(Q)
+        ##print(self.actions[np.random.randint(len(self.actions))])
+        if choice < 1 - self.epsilon:
+            
+            if np.sum(Q) == 0:
+                action = self.actions[np.random.randint(0, len(self.actions))]
+            else:
+                #print(np.argmax(Q))
+                action = self.actions[np.argmax(Q)]
+
+
+        else:
+            action = self.actions[np.random.randint(0, len(self.actions))]
+
+
+
+        return action
+
+
+
+
+
     #take action to get next state.
     # if on edge or goes into wall state doesn't change.
     def nextState(self, action):
-        print(self.state)
+        #print(self.state)
         if action == 'up' and (self.state[0] > 0 and self.board[self.state[0] - 1][self.state[1]] != 'p'):
             return [self.state[0] - 1, self.state[1]]
 
@@ -144,13 +184,36 @@ class player:
         self.alpha = .5
         self.gamma = .9
 
+    def play(self):
+
+        print('Double Q Learning')
+        self.epcount_double_q = np.zeros(self.episodes)
+        for i in range(5):
+            self.epcount_double_q += self.play_double_q()
+        
+        
+        plt.plot(self.epcount_double_q, label='Double Q learning')
+
+        print('Q Learning')
         self.epcount_q = np.zeros(self.episodes)
-        for i in range(4):
+        for i in range(5):
             self.epcount_q += self.play_q_learning()
         
-        plt.plot(self.epcount_q)
+        plt.plot(self.epcount_q, label='Q learning')
 
-        self.epcount_sarsa = self.play_sarsa()
+        print('SARSA Learning')
+        self.epcount_sarsa = np.zeros(self.episodes)
+        for i in range(5):
+            self.epcount_sarsa += self.play_sarsa()
+
+
+        
+
+        
+        plt.plot(self.epcount_sarsa, label='SARSA learning')
+        plt.legend()
+        plt.show()
+        
 
         
     
@@ -159,9 +222,9 @@ class player:
         for i in range(self.board.rows):
             for j in range(self.board.col):
                 if self.board.board[i][j] == 'p':
-                    #print('moved')
+                    ##print('moved')
                     self.playerRec.center = self.board.boardRect[i][j].center
-                    #print(self.board.boardRect[i][j].center)
+                    ##print(self.board.boardRect[i][j].center)
                     self.screen.blit(self.player, self.playerRec)
         
         pygame.display.update()
@@ -179,16 +242,16 @@ class player:
             reward = 0
             while reward == 0:
 
-                action = self.board.choose()
+                action = self.board.choose(self.board.state)
                 nxtState = self.board.nextState(action)
                 reward = self.board.reward(nxtState)
-                if reward == 1:
-                    print(reward)
-                print(self.board.state)
+                # if reward == 1:
+                #     #print(reward)
+                # #print(self.board.state)
 
                 nxtQ = np.max(self.board.Q[nxtState[0]][nxtState[1]])
                 currentQ = self.board.Q[self.board.state[0]][self.board.state[1]]
-                #print(currentQ, nxtQ, self.board.board)
+                ##print(currentQ, nxtQ, self.board.board)
 
                 currentQ[self.board.actions.index(action)] = currentQ[self.board.actions.index(action)] + self.alpha * (reward + self.gamma * nxtQ - currentQ[self.board.actions.index(action)])
                 
@@ -200,7 +263,7 @@ class player:
         #self.board.draw()
 
         return epcount_q      
-        # print(self.epcount_q)
+        # #print(self.epcount_q)
         # plt.plot(self.epcount_q)
 
 
@@ -214,24 +277,29 @@ class player:
         for i in range(self.episodes):
             self.board.initializeS()
             self.board.initializeP()
+            action = self.board.choose(self.board.state)
+
             reward = 0
             while reward == 0:
 
-                action = self.board.choose()
+                
                 nxtState = self.board.nextState(action)
                 reward = self.board.reward(nxtState)
-                if reward == 1:
-                    print(reward)
-                print(self.board.state)
+                # if reward == 1:
+                #     #print(reward)
+                # #print(self.board.state)
 
-                nxtQ = np.max(self.board.Q[nxtState[0]][nxtState[1]])
+                nxtAction = self.board.choose(nxtState)
+
+                nxtQ = self.board.Q[nxtState[0]][nxtState[1]][self.board.actions.index(nxtAction)]
                 currentQ = self.board.Q[self.board.state[0]][self.board.state[1]]
-                #print(currentQ, nxtQ, self.board.board)
+                ##print(currentQ, nxtQ, self.board.board)
 
                 currentQ[self.board.actions.index(action)] = currentQ[self.board.actions.index(action)] + self.alpha * (reward + self.gamma * nxtQ - currentQ[self.board.actions.index(action)])
                 
                 self.board.board[self.board.state[0]][self.board.state[1]] = 0
                 self.board.state = nxtState
+                action = nxtAction
                 self.board.board[self.board.state[0]][self.board.state[1]] = 'p'
                 self.showPlayer()
                 epcount_q[i] += 1
@@ -240,9 +308,47 @@ class player:
         return epcount_q      
         
                 
+    def play_double_q(self):
+        self.board.initialize()
 
+        epcount_q = np.zeros(self.episodes)
 
+        QA = self.board.Q
+        QB = self.board.makeQ()
 
+        for i in range(self.episodes):
+            self.board.initializeS()
+            self.board.initializeP()
+            reward = 0
+            while reward == 0:
+                action = self.board.choose_doubleq(QA, QB, self.board.state)
+                nxtState = self.board.nextState(action)
+                reward = self.board.reward(nxtState)
+
+                if np.random.random() > .5:
+                    #update A
+                    nxtQ = np.max(QA[nxtState[0]][nxtState[1]])
+                    currentQ = QA[self.board.state[0]][self.board.state[1]]
+                    ##print(currentQ, nxtQ, self.board.board)
+
+                    currentQ[self.board.actions.index(action)] = currentQ[self.board.actions.index(action)] + self.alpha * (reward + self.gamma * nxtQ - currentQ[self.board.actions.index(action)])
+                
+                else:
+                    nxtQ = np.max(QB[nxtState[0]][nxtState[1]])
+                    currentQ = QB[self.board.state[0]][self.board.state[1]]
+                    ##print(currentQ, nxtQ, self.board.board)
+
+                    currentQ[self.board.actions.index(action)] = currentQ[self.board.actions.index(action)] + self.alpha * (reward + self.gamma * nxtQ - currentQ[self.board.actions.index(action)])
+                
+
+                self.board.board[self.board.state[0]][self.board.state[1]] = 0
+                self.board.state = nxtState
+                self.board.board[self.board.state[0]][self.board.state[1]] = 'p'
+                self.showPlayer()
+                epcount_q[i] += 1
+                
+
+        return epcount_q      
 
 
 

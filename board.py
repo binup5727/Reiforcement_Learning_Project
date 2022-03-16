@@ -113,7 +113,7 @@ class board:
     def choose_doubleq(self, QA, QB, state):
 
         choice = np.random.random()
-        Q = (np.array(QA[state[0]][state[1]]) + np.array(QB[state[0]][state[1]])) / 2
+        Q = (np.array(QA[state[0]][state[1]]) + np.array(QB[state[0]][state[1]]))
         ##print(Q)
         ##print(self.actions[np.random.randint(len(self.actions))])
         if choice < 1 - self.epsilon:
@@ -132,6 +132,13 @@ class board:
 
         return action
 
+    def maxQ(self, Q):
+        if np.sum(Q) == 0:
+            action = np.random.randint(0, len(self.actions))
+        else:
+            #print(np.argmax(Q))
+            action = np.argmax(Q)
+        return action
 
 
 
@@ -180,15 +187,16 @@ class player:
         self.player = pygame.transform.scale(self.player, (10, 10)).convert()
         self.playerRec = self.player.get_rect()
         self.screen.blit(self.player, self.playerRec)
-        self.episodes = 50
-        self.alpha = .5
+        self.episodes = 100
+        self.alpha = .6
         self.gamma = .9
 
     def play(self):
 
         print('Double Q Learning')
         self.epcount_double_q = np.zeros(self.episodes)
-        for i in range(5):
+        for i in range(4):
+
             self.epcount_double_q += self.play_double_q()
         
         
@@ -196,20 +204,21 @@ class player:
 
         print('Q Learning')
         self.epcount_q = np.zeros(self.episodes)
-        for i in range(5):
+        for i in range(4):
             self.epcount_q += self.play_q_learning()
         
         plt.plot(self.epcount_q, label='Q learning')
 
         print('SARSA Learning')
         self.epcount_sarsa = np.zeros(self.episodes)
-        for i in range(5):
+        for i in range(4):
             self.epcount_sarsa += self.play_sarsa()
 
 
         
 
-        
+        plt.xlabel('Episodes')
+        plt.ylabel('Steps per Episode')
         plt.plot(self.epcount_sarsa, label='SARSA learning')
         plt.legend()
         plt.show()
@@ -327,14 +336,15 @@ class player:
 
                 if np.random.random() > .5:
                     #update A
-                    nxtQ = np.max(QA[nxtState[0]][nxtState[1]])
+                    print(self.board.maxQ(QA[nxtState[0]][nxtState[1]]))
+                    nxtQ = QB[nxtState[0]][nxtState[1]][self.board.maxQ(QA[nxtState[0]][nxtState[1]])]
                     currentQ = QA[self.board.state[0]][self.board.state[1]]
                     ##print(currentQ, nxtQ, self.board.board)
 
                     currentQ[self.board.actions.index(action)] = currentQ[self.board.actions.index(action)] + self.alpha * (reward + self.gamma * nxtQ - currentQ[self.board.actions.index(action)])
                 
                 else:
-                    nxtQ = np.max(QB[nxtState[0]][nxtState[1]])
+                    nxtQ = QA[nxtState[0]][nxtState[1]][self.board.maxQ(QB[nxtState[0]][nxtState[1]])]
                     currentQ = QB[self.board.state[0]][self.board.state[1]]
                     ##print(currentQ, nxtQ, self.board.board)
 

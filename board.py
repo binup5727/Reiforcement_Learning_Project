@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import gym
 
-from keras.models import Sequential
+from keras.self.models import Sequential
 from keras.layers import InputLayer
 from keras.layers import Dense
 
@@ -252,53 +252,66 @@ class player:
         n = self.board.col * self.board.rows
         self.board.draw()
         self.board.initialize()
-        self.board.initializeS()
-        self.board.initializeP()
+        
         print(self.board.board)
-        epcount_q = np.zeros(self.episodes)
-        mod = Sequential()
-        mod.add(InputLayer(batch_input_shape=(1, n)))
-        mod.add(Dense(20, activation='relu'))
-        mod.add(Dense(4, activation='linear'))
-        mod.compile(loss='mse', optimizer='adam', metrics=['mae'])
+        epcount_q = np.zeros(self.episodes * 10)
+        self.self.mod = Sequential()
+        self.mod.add(InputLayer(batch_input_shape=(1, n)))
+        self.mod.add(Dense(20, activation='relu'))
+        self.mod.add(Dense(4, activation='linear'))
+        self.mod.compile(loss='mse', optimizer='adam', metrics=['mae'])
         
 
         
 
         stateCalc = lambda s : s[0] * self.board.col + s[1]
 
-        state = stateCalc(self.board.state)
-        
-        choice = np.random.random()
-        
-        ##print(self.actions[np.random.randint(len(self.actions))])
-        if choice < 1 - self.board.epsilon:
+        for i in range(self.episodes * 10):
+
+            self.board.initializeS()
+            self.board.initializeP()
+            #state = stateCalc(self.board.state)
             
-            actionNum = np.argmax(mod.predict(np.identity(n)[state:state + 1]))
-            action = self.board.actions[actionNum]
+            reward = 0
+            while reward == 0:
 
-        else:
-            actionNum = np.random.randint(0, len(self.board.actions))
-            action = self.board.actions[actionNum]
+                state = stateCalc(self.board.state)
+                choice = np.random.random()
+                
+                ##print(self.actions[np.random.randint(len(self.actions))])
+                if choice < 1 - self.board.epsilon:
+                    
+                    actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
+                    action = self.board.actions[actionNum]
 
-        nxtState = self.board.nextState(action)
+                else:
+                    actionNum = np.random.randint(0, len(self.board.actions))
+                    action = self.board.actions[actionNum]
 
-        nxtState = stateCalc(nxtState)
+                nxtState = self.board.nextState(action)
 
-        reward = self.board.reward(nxtState)
+                self.board.board[self.board.state[0]][self.board.state[1]] = 0
+                self.board.state = nxtState
+                self.board.board[self.board.state[0]][self.board.state[1]] = 'p'
+                self.showPlayer()
+                epcount_q[i] += 1
 
-        targ = reward + (self.gamma * (np.max(mod.predict(np.identity(n)[nxtState:nxtState+1]))))
+                nxtState = stateCalc(nxtState)
 
-        targVec = mod.predict(np.identity(n)[state:state + 1])
+                reward = self.board.reward(nxtState)
 
-        targVec[0][actionNum] = targ
+                targ = reward + (self.gamma * (np.max(self.mod.predict(np.identity(n)[nxtState:nxtState+1]))))
 
-        
+                targVec = self.mod.predict(np.identity(n)[state:state + 1])
+
+                targVec[0][actionNum] = targ
+
+                
 
 
-        mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
+                self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
 
-        print(mod.predict(np.identity(n)[state:state + 1])[0])
+            print(self.mod.predict(np.identity(n)[state:state + 1])[0])
         
 
 

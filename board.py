@@ -2,18 +2,41 @@ from re import L
 import pygame
 import numpy as np
 import matplotlib.pyplot as plt
+import gym
+
+from keras.models import Sequential
+from keras.layers import InputLayer
+from keras.layers import Dense
+
 class board:
     def __init__(self, rows, col, screen):
         self.rows = rows
         self.col = col
         self.screen = screen
+        self.board = []
+        self.boardRect = []
+        self.win = [3, self.col - 1]
+        self.initializeS()
+
+        for i in range(self.rows):
+
+            self.board.append([])
+            self.boardRect.append([])
         
-        
+            for j in range(self.col):
+                
+                self.board[i].append(0)
+                self.boardRect[i].append(pygame.Rect((j * 25, i * 25, 20, 20)))
+
+                pygame.draw.rect(self.screen, (0, 0, 255), self.boardRect[i][j])
 
 
+                
+    
+        self.board[self.win[0]][self.win[1]] = 1
+
+        self.board[self.state[0]][self.state[1]] = 'p'
         self.initialize()
-
-        
 
         ##print(win[0])
         
@@ -37,26 +60,20 @@ class board:
 
         
     def initialize(self):
-        self.board = []
-        self.boardRect = []
+        
         self.Q = []
         self.actions = ['up', 'down', 'left', 'right']
-        self.win = [3, self.col - 1]
+        
         # self.nxtState = []
         self.initializeS()
         self.epsilon = .01
 
         for i in range(self.rows):
-            self.board.append([])
-            self.boardRect.append([])
             self.Q.append([])
             for j in range(self.col):
                 
                 self.Q[i].append([])
-                self.board[i].append(0)
-                self.boardRect[i].append(pygame.Rect((j * 25, i * 25, 20, 20)))
-
-                pygame.draw.rect(self.screen, (0, 0, 255), self.boardRect[i][j])
+                
 
                 for k in range(4):
                     self.Q[i][j].append(0)
@@ -189,29 +206,34 @@ class player:
         self.screen.blit(self.player, self.playerRec)
         self.episodes = 100
         self.alpha = .6
-        self.gamma = .9
+        self.gamma = 1
+
+        self.NN_play()
 
     def play(self):
 
-        print('Double Q Learning')
-        self.epcount_double_q = np.zeros(self.episodes)
-        for i in range(4):
+        rng = 1
+        # print('Double Q Learning')
+        # self.epcount_double_q = np.zeros(self.episodes)
+        # for i in range(rng):
 
-            self.epcount_double_q += self.play_double_q()
+        #     self.epcount_double_q += self.play_double_q()
         
         
-        plt.plot(self.epcount_double_q, label='Double Q learning')
+        # plt.plot(self.epcount_double_q, label='Double Q learning')
+
+        self.NN_play()
 
         print('Q Learning')
         self.epcount_q = np.zeros(self.episodes)
-        for i in range(4):
+        for i in range(rng):
             self.epcount_q += self.play_q_learning()
         
         plt.plot(self.epcount_q, label='Q learning')
 
         print('SARSA Learning')
         self.epcount_sarsa = np.zeros(self.episodes)
-        for i in range(4):
+        for i in range(rng):
             self.epcount_sarsa += self.play_sarsa()
 
 
@@ -220,9 +242,65 @@ class player:
         plt.xlabel('Episodes')
         plt.ylabel('Steps per Episode')
         plt.plot(self.epcount_sarsa, label='SARSA learning')
+        print('q lerning, SARSA, Double q learning')
+        print(np.min(self.epcount_q), np.min(self.epcount_sarsa), np.min(self.epcount_double_q))        
         plt.legend()
         plt.show()
         
+
+    def NN_play(self):
+        n = self.board.col * self.board.rows
+        self.board.draw()
+        self.board.initialize()
+        self.board.initializeS()
+        self.board.initializeP()
+        print(self.board.board)
+        epcount_q = np.zeros(self.episodes)
+        mod = Sequential()
+        mod.add(InputLayer(batch_input_shape=(1, n)))
+        mod.add(Dense(20, activation='relu'))
+        mod.add(Dense(4, activation='linear'))
+        mod.compile(loss='mse', optimizer='adam', metrics=['mae'])
+        
+
+        
+
+        stateCalc = lambda s : s[0] * self.board.col + s[1]
+
+        state = stateCalc(self.board.state)
+        
+        choice = np.random.random()
+        
+        ##print(self.actions[np.random.randint(len(self.actions))])
+        if choice < 1 - self.board.epsilon:
+            
+            actionNum = np.argmax(mod.predict(np.identity(n)[state:state + 1]))
+            action = self.board.actions[actionNum]
+
+        else:
+            actionNum = np.random.randint(0, len(self.board.actions))
+            action = self.board.actions[actionNum]
+
+        nxtState = self.board.nextState(action)
+
+        nxtState = stateCalc(nxtState)
+
+        reward = self.board.reward(nxtState)
+
+        targ = reward + (self.gamma * (np.max(mod.predict(np.identity(n)[nxtState:nxtState+1]))))
+
+        targVec = mod.predict(np.identity(n)[state:state + 1])
+
+        targVec[0][actionNum] = targ
+
+        
+
+
+        mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
+
+        print(mod.predict(np.identity(n)[state:state + 1])[0])
+        
+
 
         
     
@@ -239,7 +317,7 @@ class player:
         pygame.display.update()
 
     def play_q_learning(self):
-
+        self.board.draw()
         self.board.initialize()
         
 
@@ -270,6 +348,7 @@ class player:
                 self.showPlayer()
                 epcount_q[i] += 1
         #self.board.draw()
+        #print(self.board.)
 
         return epcount_q      
         # #print(self.epcount_q)
@@ -277,7 +356,7 @@ class player:
 
 
     def play_sarsa(self):
-
+        self.board.draw()
         self.board.initialize()
         
 
@@ -313,6 +392,7 @@ class player:
                 self.showPlayer()
                 epcount_q[i] += 1
         #self.board.draw()
+        #print(epcount_q)
 
         return epcount_q      
         

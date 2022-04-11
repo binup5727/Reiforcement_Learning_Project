@@ -2,9 +2,9 @@ from re import L
 import pygame
 import numpy as np
 import matplotlib.pyplot as plt
-import gym
 
-from keras.self.models import Sequential
+
+from keras.models import Sequential
 from keras.layers import InputLayer
 from keras.layers import Dense
 
@@ -255,7 +255,7 @@ class player:
         
         print(self.board.board)
         epcount_q = np.zeros(self.episodes * 10)
-        self.self.mod = Sequential()
+        self.mod = Sequential()
         self.mod.add(InputLayer(batch_input_shape=(1, n)))
         self.mod.add(Dense(20, activation='relu'))
         self.mod.add(Dense(4, activation='linear'))
@@ -273,7 +273,9 @@ class player:
             #state = stateCalc(self.board.state)
             
             reward = 0
+            print(i, ' cycle')
             while reward == 0:
+                print(epcount_q[i], self.board.state)
 
                 state = stateCalc(self.board.state)
                 choice = np.random.random()

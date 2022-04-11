@@ -270,7 +270,7 @@ class player:
 
             self.board.initializeS()
             self.board.initializeP()
-            tempEps = self.board.epsilon
+            tempEps = .5
             tempEps = tempEps * .9
             #state = stateCalc(self.board.state)
             
@@ -287,10 +287,11 @@ class player:
                     
                     actionNum = np.random.randint(0, len(self.board.actions))
                     action = self.board.actions[actionNum]
-                    
+
                 else:
                     actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
                     action = self.board.actions[actionNum]
+                print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))
 
                 
                     

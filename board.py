@@ -270,6 +270,8 @@ class player:
 
             self.board.initializeS()
             self.board.initializeP()
+            tempEps = self.board.epsilon
+            tempEps = tempEps * .9
             #state = stateCalc(self.board.state)
             
             reward = 0
@@ -281,14 +283,17 @@ class player:
                 choice = np.random.random()
                 
                 ##print(self.actions[np.random.randint(len(self.actions))])
-                if choice < 1 - self.board.epsilon:
+                if choice < tempEps:
                     
+                    actionNum = np.random.randint(0, len(self.board.actions))
+                    action = self.board.actions[actionNum]
+                    
+                else:
                     actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
                     action = self.board.actions[actionNum]
 
-                else:
-                    actionNum = np.random.randint(0, len(self.board.actions))
-                    action = self.board.actions[actionNum]
+                
+                    
 
                 nxtState = self.board.nextState(action)
 

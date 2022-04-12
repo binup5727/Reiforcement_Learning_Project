@@ -285,17 +285,17 @@ class player:
 
         self.mod.fit(np.identity(n), trueQ, epochs=1000)
         
-        approxQ = [ [[] for i in range(self.board.col)] for k in range(self.board.rows)]
+        approxQ = [ [0 for i in range(self.board.col)] for k in range(self.board.rows)]
         for i in range(self.board.rows):
             for j in range(self.board.col):
                 pos = [i, j]
                 pos = stateCalc(pos)
-                
-                approxQ[i][j].append(self.mod.predict(np.identity(n)[pos:pos+1]))
+                print(self.mod.predict(np.identity(n)[pos:pos+1]))
+                approxQ[i][j] = (self.mod.predict(np.identity(n)[pos:pos+1])[0])
 
-        print(approxQ[0:3])
-        print(self.board.Q[0:3])
-
+        print(approxQ[0][:])
+        print(self.board.Q[0][:])
+        #print(np.abs(self.board.Q - approxQ))
         for i in range(self.episodes * 10):
 
             self.board.initializeS()

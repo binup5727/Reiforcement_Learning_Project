@@ -204,9 +204,9 @@ class player:
         self.player = pygame.transform.scale(self.player, (10, 10)).convert()
         self.playerRec = self.player.get_rect()
         self.screen.blit(self.player, self.playerRec)
-        self.episodes = 100
-        self.alpha = .6
-        self.gamma = 1
+        self.episodes = 400
+        self.alpha = .7
+        self.gamma = .9
 
         self.NN_play()
 
@@ -249,77 +249,108 @@ class player:
         
 
     def NN_play(self):
+        stateCalc = lambda s : s[0] * self.board.col + s[1]
+
         n = self.board.col * self.board.rows
-        self.board.draw()
-        self.board.initialize()
+        # self.board.draw()
+        # self.board.initialize()
         
-        print(self.board.board)
+        #play q learning to get target q table
+        self.play_q_learning()
+        #print(self.board.Q)
+
+        trueQ = np.zeros((n, 4))
+        for i in range(self.board.rows):
+            for j in range(self.board.col):
+                for k in range(4):
+                    #print(stateCalc(self.board.Q))
+                    Qpos = [i, j]
+                    trueQ[stateCalc(Qpos)][k] = self.board.Q[i][j][k]
+        
+        #print(trueQ)
+
+
         epcount_q = np.zeros(self.episodes * 10)
         self.mod = Sequential()
         self.mod.add(InputLayer(batch_input_shape=(1, n)))
-        self.mod.add(Dense(20, activation='relu'))
+        self.mod.add(Dense(n * 2, activation='relu'))
         self.mod.add(Dense(4, activation='linear'))
         self.mod.compile(loss='mse', optimizer='adam', metrics=['mae'])
         
 
         
 
-        stateCalc = lambda s : s[0] * self.board.col + s[1]
+        
 
-        for i in range(self.episodes * 10):
+        self.mod.fit(np.identity(n), trueQ, epochs=1000)
+        
+        approxQ = [ [0 for i in range(self.board.col)] for k in range(self.board.rows)]
+        for i in range(self.board.rows):
+            for j in range(self.board.col):
+                pos = [i, j]
+                pos = stateCalc(pos)
+                #print(self.mod.predict(np.identity(n)[pos:pos+1]))
+                approxQ[i][j] = self.mod.predict(np.identity(n)[pos:pos+1])[0]
 
-            self.board.initializeS()
-            self.board.initializeP()
-            tempEps = .5
-            tempEps = tempEps * .9
-            #state = stateCalc(self.board.state)
+        approxQ = np.array(approxQ)
+        trueQ = np.array(self.board.Q)
+        diff = np.abs(trueQ - approxQ)
+        print('true Q: ', trueQ, 'aprox Q: ', self.board.Q, 'difference: ', diff)
+
+        # for i in range(self.episodes * 10):
+
+        #     self.board.initializeS()
+        #     self.board.initializeP()
+        #     tempEps = .5
+        #     tempEps = tempEps * .9
+        #     #state = stateCalc(self.board.state)
             
-            reward = 0
-            print(i, ' cycle')
-            while reward == 0:
-                print(epcount_q[i], self.board.state)
+        #     reward = 0
+        #     print(i, ' cycle')
+        #     while reward == 0:
+        #         print(epcount_q[i], self.board.state)
 
-                state = stateCalc(self.board.state)
-                choice = np.random.random()
+        #         state = stateCalc(self.board.state)
+        #         choice = np.random.random()
                 
-                ##print(self.actions[np.random.randint(len(self.actions))])
-                if choice < tempEps:
+        #         ##print(self.actions[np.random.randint(len(self.actions))])
+        #         if choice < tempEps:
                     
-                    actionNum = np.random.randint(0, len(self.board.actions))
-                    action = self.board.actions[actionNum]
+        #             actionNum = np.random.randint(0, len(self.board.actions))
+        #             action = self.board.actions[actionNum]
 
-                else:
-                    actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
-                    action = self.board.actions[actionNum]
-                print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))
+        #         else:
+        #             actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
+        #             action = self.board.actions[actionNum]
+        #         print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))
 
                 
                     
 
-                nxtState = self.board.nextState(action)
+        #         nxtState = self.board.nextState(action)
 
-                self.board.board[self.board.state[0]][self.board.state[1]] = 0
-                self.board.state = nxtState
-                self.board.board[self.board.state[0]][self.board.state[1]] = 'p'
-                self.showPlayer()
-                epcount_q[i] += 1
+        #         self.board.board[self.board.state[0]][self.board.state[1]] = 0
+        #         self.board.state = nxtState
+        #         self.board.board[self.board.state[0]][self.board.state[1]] = 'p'
+        #         self.showPlayer()
+        #         epcount_q[i] += 1
 
-                nxtState = stateCalc(nxtState)
+        #         nxtState = stateCalc(nxtState)
 
-                reward = self.board.reward(nxtState)
+        #         reward = self.board.reward(nxtState)
 
-                targ = reward + (self.gamma * (np.max(self.mod.predict(np.identity(n)[nxtState:nxtState+1]))))
+        #         targ = reward + (self.gamma * (np.max(self.mod.predict(np.identity(n)[nxtState:nxtState+1]))))
 
-                targVec = self.mod.predict(np.identity(n)[state:state + 1])
+        #         targVec = self.mod.predict(np.identity(n)[state:state + 1])
 
-                targVec[0][actionNum] = targ
+        #         targVec[0][actionNum] = targ
 
                 
 
 
-                self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
+        #         self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
 
-            print(self.mod.predict(np.identity(n)[state:state + 1])[0])
+        #     print(self.mod.predict(np.identity(n)[state:state + 1])[0])
         
 
 

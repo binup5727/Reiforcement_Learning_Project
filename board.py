@@ -298,7 +298,7 @@ class player:
         diff = np.abs(trueQ - approxQ)
         print('true Q: ', trueQ, '\n\naprox Q: ', approxQ, '\n\ndifference: ', diff)
 
-        # for i in range(self.episodes * 10):
+        for i in range(self.episodes * 10):
 
         #     self.board.initializeS()
         #     self.board.initializeP()

@@ -69,7 +69,7 @@ class board:
         
         # self.nxtState = []
         self.initializeS()
-        self.epsilon = .01
+        self.epsilon = .1
 
         for i in range(self.rows):
             self.Q.append([])
@@ -384,13 +384,14 @@ class player:
                 self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
 
                 
-            if tempEps > .01:
-                tempEps = tempEps * .7
+            if tempEps > .1:
+                tempEps = tempEps * .99
             print(tempEps)
             
 
         plt.plot(epcount_NN, label='Neural Network')
         plt.plot(epcount_q, label='Q-Learning')
+        plt.legend()
 
         plt.show()
         print()

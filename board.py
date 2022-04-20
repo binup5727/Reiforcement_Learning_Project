@@ -207,7 +207,7 @@ class player:
         self.player = pygame.transform.scale(self.player, (10, 10)).convert()
         self.playerRec = self.player.get_rect()
         self.screen.blit(self.player, self.playerRec)
-        self.episodes = 50
+        self.episodes = 500
         self.alpha = .7
         self.gamma = .9
 
@@ -305,8 +305,8 @@ class player:
         diff = np.abs(trueQ - approxQ)
         print('true Q: ', trueQ, '\n\naprox Q: ', approxQ, '\n\ndifference: ', diff)
 
-        plt.plot(trueQ, linestyle='None', marker='o', color='blue', label='Q-learning')
-        plt.plot(approxQ.reshape(1,n), linestyle='None', marker='o', color='blue', label='Q-Aproximated')
+        plt.plot(trueQ.reshape(1, n*4)[0], linestyle='None', marker='o', color='blue', label='Q-learning')
+        plt.plot(approxQ.reshape(1, n*4)[0], linestyle='None', marker='o', color='red', label='Q-Aproximated')
         plt.show()
 
         #NN online training.....................................................................
@@ -389,8 +389,8 @@ class player:
             print(tempEps)
             
 
-        plt.plot(epcount_NN)
-        plt.plot(epcount_q)
+        plt.plot(epcount_NN, label='Neural Network')
+        plt.plot(epcount_q, label='Q-Learning')
 
         plt.show()
         print()
@@ -407,14 +407,7 @@ class player:
         onlineNNQ = np.array(onlineNNQ)
         print(onlineNNQ)
 
-        for i in range(self.board.rows):
-            for j in range(self.board.col):
-                for k in range(4):
-                    #print(stateCalc(self.board.Q))
-                    Qpos = [i, j]
-                    onlineNNQ[stateCalc(Qpos)][k] = self.board.Q[i][j][k]
-
-        plt.plot(onlineNNQ, LineStyle='none', markers='o')
+        plt.plot(onlineNNQ.reshape(1, n*4)[0], LineStyle='none', markers='o')
         plt.show()
         
 

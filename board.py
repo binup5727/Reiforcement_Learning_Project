@@ -368,6 +368,17 @@ class player:
                 self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
 
         plt.plot(epcount_NN, epcount_q)
+        print()
+
+        onlineNNQ = np.zeros((n, 4))
+        for i in range(self.board.rows):
+            for j in range(self.board.col):
+                pos = [i, j]
+                pos = stateCalc(pos)
+                #print(self.mod.predict(np.identity(n)[pos:pos+1]))
+                onlineNNQ[i][j] = self.mod.predict(np.identity(n)[pos:pos+1])[0]
+        
+        print(onlineNNQ)
         
 
 

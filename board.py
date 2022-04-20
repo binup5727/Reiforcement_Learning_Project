@@ -331,11 +331,12 @@ class player:
                 
                 ##print(self.actions[np.random.randint(len(self.actions))])
                 if choice < tempEps:
-                    
+                    print('random')
                     actionNum = np.random.randint(0, len(self.board.actions))
                     action = self.board.actions[actionNum]
 
                 else:
+                    print('greedy')
                     actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
                     action = self.board.actions[actionNum]
                 print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))

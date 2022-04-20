@@ -324,7 +324,7 @@ class player:
             reward = 0
             print(i, ' cycle')
             while reward == 0:
-                print(epcount_q[i], self.board.state)
+                print(epcount_NN[i], self.board.state)
 
                 state = stateCalc(self.board.state)
                 choice = np.random.random()
@@ -351,9 +351,10 @@ class player:
                 self.showPlayer()
                 epcount_NN[i] += 1
 
+                reward = self.board.reward(nxtState)
                 nxtState = stateCalc(nxtState)
 
-                reward = self.board.reward(nxtState)
+                
 
                 targ = reward + (self.gamma * (np.max(self.mod.predict(np.identity(n)[nxtState:nxtState+1]))))
 

@@ -1,3 +1,4 @@
+from cProfile import label
 from re import L
 
 
@@ -296,10 +297,17 @@ class player:
                 #print(self.mod.predict(np.identity(n)[pos:pos+1]))
                 approxQ[i][j] = self.mod.predict(np.identity(n)[pos:pos+1])[0]
 
+
+        
+
         approxQ = np.array(approxQ)
         trueQ = np.array(self.board.Q)
         diff = np.abs(trueQ - approxQ)
         print('true Q: ', trueQ, '\n\naprox Q: ', approxQ, '\n\ndifference: ', diff)
+
+        plt.plot(trueQ, linestyle='None', marker='o', color='blue', label='Q-learning')
+        plt.plot(approxQ.reshape(1,n), linestyle='None', marker='o', color='blue', label='Q-Aproximated')
+        plt.show()
 
         #NN online training.....................................................................
         

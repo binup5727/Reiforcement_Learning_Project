@@ -224,31 +224,32 @@ class player:
 
         self.NN_play()
 
-        print('Q Learning')
-        self.epcount_q = np.zeros(self.episodes)
-        for i in range(rng):
-            self.epcount_q += self.play_q_learning()
+        # print('Q Learning')
+        # self.epcount_q = np.zeros(self.episodes)
+        # for i in range(rng):
+        #     self.epcount_q += self.play_q_learning()
         
-        plt.plot(self.epcount_q, label='Q learning')
+        # plt.plot(self.epcount_q, label='Q learning')
 
-        print('SARSA Learning')
-        self.epcount_sarsa = np.zeros(self.episodes)
-        for i in range(rng):
-            self.epcount_sarsa += self.play_sarsa()
+        # print('SARSA Learning')
+        # self.epcount_sarsa = np.zeros(self.episodes)
+        # for i in range(rng):
+        #     self.epcount_sarsa += self.play_sarsa()
 
 
         
 
-        plt.xlabel('Episodes')
-        plt.ylabel('Steps per Episode')
-        plt.plot(self.epcount_sarsa, label='SARSA learning')
-        print('q lerning, SARSA, Double q learning')
-        print(np.min(self.epcount_q), np.min(self.epcount_sarsa), np.min(self.epcount_double_q))        
-        plt.legend()
-        plt.show()
+        # plt.xlabel('Episodes')
+        # plt.ylabel('Steps per Episode')
+        # plt.plot(self.epcount_sarsa, label='SARSA learning')
+        # print('q lerning, SARSA, Double q learning')
+        # print(np.min(self.epcount_q), np.min(self.epcount_sarsa), np.min(self.epcount_double_q))        
+        # plt.legend()
+        # plt.show()
         
 
     def NN_play(self):
+        
         stateCalc = lambda s : s[0] * self.board.col + s[1]
 
         n = self.board.col * self.board.rows
@@ -256,7 +257,8 @@ class player:
         # self.board.initialize()
         
         #play q learning to get target q table
-        self.play_q_learning()
+        epcount_q = np.zeros(self.episodes)
+        epcount_q = self.play_q_learning()
         #print(self.board.Q)
 
         trueQ = np.zeros((n, 4))
@@ -270,7 +272,7 @@ class player:
         #print(trueQ)
 
 
-        epcount_q = np.zeros(self.episodes * 10)
+        
         self.mod = Sequential()
         self.mod.add(InputLayer(batch_input_shape=(1, n)))
         self.mod.add(Dense(n * 2, activation='relu'))
@@ -295,62 +297,76 @@ class player:
         approxQ = np.array(approxQ)
         trueQ = np.array(self.board.Q)
         diff = np.abs(trueQ - approxQ)
-        print('true Q: ', trueQ, 'aprox Q: ', self.board.Q, 'difference: ', diff)
+        print('true Q: ', trueQ, '\n\naprox Q: ', approxQ, '\n\ndifference: ', diff)
 
-        # for i in range(self.episodes * 10):
+        #NN online training.....................................................................
+        
 
-        #     self.board.initializeS()
-        #     self.board.initializeP()
-        #     tempEps = .5
-        #     tempEps = tempEps * .9
-        #     #state = stateCalc(self.board.state)
+        self.mod = Sequential()
+        self.mod.add(InputLayer(batch_input_shape=(1, n)))
+        self.mod.add(Dense(n * 2, activation='relu'))
+        self.mod.add(Dense(4, activation='linear'))
+        self.mod.compile(loss='mse', optimizer='adam', metrics=['mae'])
+        
+        epochs = self.episodes * 10
+        epcount_NN = np.zeros(epochs)
+        self.board.draw()
+        self.board.initialize()
+
+        for i in range(epochs):
+
+            self.board.initializeS()
+            self.board.initializeP()
+            tempEps = .5
+            tempEps = tempEps * .9
+            #state = stateCalc(self.board.state)
             
-        #     reward = 0
-        #     print(i, ' cycle')
-        #     while reward == 0:
-        #         print(epcount_q[i], self.board.state)
+            reward = 0
+            print(i, ' cycle')
+            while reward == 0:
+                print(epcount_q[i], self.board.state)
 
-        #         state = stateCalc(self.board.state)
-        #         choice = np.random.random()
+                state = stateCalc(self.board.state)
+                choice = np.random.random()
                 
-        #         ##print(self.actions[np.random.randint(len(self.actions))])
-        #         if choice < tempEps:
+                ##print(self.actions[np.random.randint(len(self.actions))])
+                if choice < tempEps:
                     
-        #             actionNum = np.random.randint(0, len(self.board.actions))
-        #             action = self.board.actions[actionNum]
+                    actionNum = np.random.randint(0, len(self.board.actions))
+                    action = self.board.actions[actionNum]
 
-        #         else:
-        #             actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
-        #             action = self.board.actions[actionNum]
-        #         print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))
+                else:
+                    actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
+                    action = self.board.actions[actionNum]
+                print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))
 
                 
                     
 
-        #         nxtState = self.board.nextState(action)
+                nxtState = self.board.nextState(action)
 
-        #         self.board.board[self.board.state[0]][self.board.state[1]] = 0
-        #         self.board.state = nxtState
-        #         self.board.board[self.board.state[0]][self.board.state[1]] = 'p'
-        #         self.showPlayer()
-        #         epcount_q[i] += 1
+                self.board.board[self.board.state[0]][self.board.state[1]] = 0
+                self.board.state = nxtState
+                self.board.board[self.board.state[0]][self.board.state[1]] = 'p'
+                self.showPlayer()
+                epcount_NN[i] += 1
 
-        #         nxtState = stateCalc(nxtState)
+                nxtState = stateCalc(nxtState)
 
-        #         reward = self.board.reward(nxtState)
+                reward = self.board.reward(nxtState)
 
-        #         targ = reward + (self.gamma * (np.max(self.mod.predict(np.identity(n)[nxtState:nxtState+1]))))
+                targ = reward + (self.gamma * (np.max(self.mod.predict(np.identity(n)[nxtState:nxtState+1]))))
 
-        #         targVec = self.mod.predict(np.identity(n)[state:state + 1])
+                targVec = self.mod.predict(np.identity(n)[state:state + 1])
 
-        #         targVec[0][actionNum] = targ
+                targVec[0][actionNum] = targ
 
                 
 
 
-        #         self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
+                self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
 
-        #     print(self.mod.predict(np.identity(n)[state:state + 1])[0])
+        plt.plot(epcount_NN, epcount_q)
         
 
 

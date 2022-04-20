@@ -1,4 +1,6 @@
 from re import L
+
+
 import pygame
 import numpy as np
 import matplotlib.pyplot as plt
@@ -204,7 +206,7 @@ class player:
         self.player = pygame.transform.scale(self.player, (10, 10)).convert()
         self.playerRec = self.player.get_rect()
         self.screen.blit(self.player, self.playerRec)
-        self.episodes = 400
+        self.episodes = 50
         self.alpha = .7
         self.gamma = .9
 
@@ -308,38 +310,43 @@ class player:
         self.mod.add(Dense(4, activation='linear'))
         self.mod.compile(loss='mse', optimizer='adam', metrics=['mae'])
         
-        epochs = self.episodes * 10
+        epochs = self.episodes
         epcount_NN = np.zeros(epochs)
         self.board.draw()
         self.board.initialize()
+        
+        tempEps = .5
 
         for i in range(epochs):
+            print(i, ' cycle')
 
             self.board.initializeS()
             self.board.initializeP()
-            tempEps = .5
-            tempEps = tempEps * .9
+            
+            
             #state = stateCalc(self.board.state)
             
             reward = 0
-            print(i, ' cycle')
+            
+            
             while reward == 0:
-                print(epcount_NN[i], self.board.state)
+                #print("epsilon: ", tempEps)
+                #print(epcount_NN[i], self.board.state)
 
                 state = stateCalc(self.board.state)
                 choice = np.random.random()
                 
                 ##print(self.actions[np.random.randint(len(self.actions))])
                 if choice < tempEps:
-                    print('random')
+                    #print('random')
                     actionNum = np.random.randint(0, len(self.board.actions))
                     action = self.board.actions[actionNum]
 
                 else:
-                    print('greedy')
+                    #print('greedy')
                     actionNum = np.argmax(self.mod.predict(np.identity(n)[state:state + 1]))
                     action = self.board.actions[actionNum]
-                print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))
+                #print(actionNum, action, self.mod.predict(np.identity(n)[state:state + 1]))
 
                 
                     
@@ -368,18 +375,39 @@ class player:
 
                 self.mod.fit(np.identity(n)[state:state + 1], targVec, epochs=1, verbose=0)
 
-        plt.plot(epcount_NN, epcount_q)
+                
+            if tempEps > .01:
+                tempEps = tempEps * .7
+            print(tempEps)
+            
+
+        plt.plot(epcount_NN)
+        plt.plot(epcount_q)
+
+        plt.show()
         print()
 
-        onlineNNQ = np.zeros((n, 4))
+        onlineNNQ = [ [0 for i in range(self.board.col)] for k in range(self.board.rows)]
         for i in range(self.board.rows):
             for j in range(self.board.col):
                 pos = [i, j]
                 pos = stateCalc(pos)
                 #print(self.mod.predict(np.identity(n)[pos:pos+1]))
                 onlineNNQ[i][j] = self.mod.predict(np.identity(n)[pos:pos+1])[0]
-        
+
+
+        onlineNNQ = np.array(onlineNNQ)
         print(onlineNNQ)
+
+        for i in range(self.board.rows):
+            for j in range(self.board.col):
+                for k in range(4):
+                    #print(stateCalc(self.board.Q))
+                    Qpos = [i, j]
+                    onlineNNQ[stateCalc(Qpos)][k] = self.board.Q[i][j][k]
+
+        plt.plot(onlineNNQ, LineStyle='none', markers='o')
+        plt.show()
         
 
 
